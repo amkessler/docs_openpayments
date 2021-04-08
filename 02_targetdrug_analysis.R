@@ -38,6 +38,24 @@ targetdrugsonly <- targetdrugsonly %>%
   )
 
 
+#since the drug names are split across five columns, we'll make a combined one to make searching easier
+targetdrugsonly <- targetdrugsonly %>% 
+  mutate(
+    ak_drugname_combined = paste(name_of_drug_or_biological_or_device_or_medical_supply_1,
+                              name_of_drug_or_biological_or_device_or_medical_supply_2,
+                              name_of_drug_or_biological_or_device_or_medical_supply_3,
+                              name_of_drug_or_biological_or_device_or_medical_supply_4,
+                              name_of_drug_or_biological_or_device_or_medical_supply_5,
+                              sep = "|")
+  )
+    
+
+#export dataset for sharing
+write_xlsx(targetdrugsonly, "output/targetdrugsonly.xlsx")
+
+
+
+#### AGGREGATES ####
 #total money?
 targetdrugsonly %>% 
   summarise(totalpayments = sum(total_amount_of_payment_us_dollars))
@@ -49,6 +67,27 @@ targetdrugsonly %>%
 targetdrugsonly %>% 
   group_by(covered_recipient_type) %>% 
   summarise(totalpayments = sum(total_amount_of_payment_us_dollars))
+
+
+#by company
+targetdrugsonly %>% 
+  group_by(submitting_applicable_manufacturer_or_applicable_gpo_name) %>% 
+  summarise(totalpayments = sum(total_amount_of_payment_us_dollars)) %>% 
+  arrange(desc(totalpayments))
+
+targetdrugsonly %>% 
+  group_by(applicable_manufacturer_or_applicable_gpo_making_payment_name) %>% 
+  summarise(totalpayments = sum(total_amount_of_payment_us_dollars)) %>% 
+  arrange(desc(totalpayments))
+         
+
+#drug combo variations
+targetdrugsonly %>% 
+  group_by(ak_drugname_combined) %>% 
+  summarise(totalpayments = sum(total_amount_of_payment_us_dollars)) %>% 
+  arrange(desc(totalpayments)) 
+
+
 
 #top docs
 targetdrugsonly %>% 
