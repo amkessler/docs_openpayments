@@ -3,7 +3,7 @@ library(janitor)
 library(lubridate)
 library(writexl)
 
-#target drug query done in BigQuery. Results exported to csv and we'll load them here:
+#target drug query done in BigQuery. Resulting data slice exported to csv and we'll load them here:
 targetdrugsonly <- read_csv("processed_data/targetdrugsonly.csv", col_types = cols(.default = "c"))
 
 glimpse(targetdrugsonly)
