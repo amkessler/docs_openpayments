@@ -1,7 +1,9 @@
 library(tidyverse)
 library(janitor)
 library(lubridate)
+library(readxl)
 library(writexl)
+
 
 #target drug query done in BigQuery. Resulting data slice exported to csv and we'll load them here:
 targetdrugsonly <- read_csv("processed_data/targetdrugsonly.csv", col_types = cols(.default = "c"))
@@ -55,7 +57,9 @@ write_xlsx(targetdrugsonly, "output/targetdrugsonly.xlsx")
 
 
 
-#### AGGREGATES ####
+
+#### AGGREGATES #### -----------------------------------------------------------
+
 #total money?
 targetdrugsonly %>% 
   summarise(totalpayments = sum(total_amount_of_payment_us_dollars))
@@ -94,4 +98,44 @@ targetdrugsonly %>%
   group_by(physician_last_name, physician_first_name, recipient_state) %>% 
   summarise(totalpayments = sum(total_amount_of_payment_us_dollars)) %>%
   arrange(desc(totalpayments))
+
+
+
+
+#### LOOKING UP SPECIFIC DOCTORS #####
+
+#bring in list of docs
+targetdoctors <- read_excel("reference/Bausch_targetdoctors_vb.xlsx") %>% 
+                    clean_names()
+
+targetdoctors
+
+#filter out non-prescribers
+# targetdoctors <- targetdoctors %>% 
+#   filter(can_prescribe == "Y")
+
+#upper case the names to match for joining
+targetdoctors <- targetdoctors %>% 
+  mutate(
+    firstname = str_trim(str_to_upper(firstname)),
+    middlename = str_trim(str_to_upper(middlename)),
+    lastname = str_trim(str_to_upper(lastname)),
+    city = str_trim(str_to_upper(city)),
+    state = str_trim(str_to_upper(state))              
+  )
+
+targetdoctors
+
+#join to openpayments data slice for target drugs
+
+glimpse(targetdrugsonly)
+
+matches <- inner_join(targetdrugsonly, targetdoctors, by = c("physician_last_name" = "lastname",
+                                                  "physician_first_name" = "firstname",
+                                                  "recipient_state" = "state")) 
+
+matches
+
+#export for sharing
+write_xlsx(matches, "output/matches_targetdrugs_targetdocs.xlsx")
 
